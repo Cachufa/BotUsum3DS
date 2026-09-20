@@ -5,7 +5,12 @@ from __future__ import annotations
 import unittest
 
 from botusum.inputs import PadDriver
-from botusum.sequence import MASH_A_DURATION_S, MASH_A_GAP_S, run_poipole_sequence
+from botusum.sequence import (
+    MASH_A_AFTER_B_S,
+    MASH_A_DURATION_S,
+    MASH_A_GAP_S,
+    run_poipole_sequence,
+)
 
 
 class FakeSession:
@@ -26,7 +31,11 @@ class FakeSession:
 
 class FakePad:
     def __init__(self) -> None:
+        self.taps: list[str] = []
         self.calls: list[tuple[str, float, float]] = []
+
+    def tap(self, button: str) -> None:
+        self.taps.append(button)
 
     def mash(self, button: str, duration_s: float, *, gap_s: float) -> int:
         self.calls.append((button, duration_s, gap_s))
@@ -34,12 +43,20 @@ class FakePad:
 
 
 class SequenceTests(unittest.TestCase):
-    def test_mashes_a_for_ten_seconds(self) -> None:
+    def test_mash_a_then_nickname_b(self) -> None:
         pad = FakePad()
         taps = run_poipole_sequence(pad)
-        self.assertEqual(taps, 17)
-        self.assertEqual(pad.calls, [("A", MASH_A_DURATION_S, MASH_A_GAP_S)])
-        self.assertEqual(MASH_A_DURATION_S, 10.0)
+        self.assertEqual(taps, 34)
+        self.assertEqual(pad.taps, ["B"])
+        self.assertEqual(
+            pad.calls,
+            [
+                ("A", MASH_A_DURATION_S, MASH_A_GAP_S),
+                ("A", MASH_A_AFTER_B_S, MASH_A_GAP_S),
+            ],
+        )
+        self.assertEqual(MASH_A_DURATION_S, 31.0)
+        self.assertEqual(MASH_A_AFTER_B_S, 1.0)
 
     def test_pad_mash_maps_a_to_session(self) -> None:
         session = FakeSession()

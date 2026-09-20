@@ -33,10 +33,10 @@ Split (implement in this order). Status values: `requirements â€” not started` â
 | 02 | [azahar-process.md](azahar-process.md) | done |
 | 03 | [inputs-macos.md](inputs-macos.md) | done |
 | 04 | [picker.md](picker.md) | done |
-| 05 | [poipole-sequence.md](poipole-sequence.md) | in progress |
-| 06 | [parse-shiny-value.md](parse-shiny-value.md) | not started |
+| 05 | [poipole-sequence.md](poipole-sequence.md) | done |
+| 06 | [parse-shiny-value.md](parse-shiny-value.md) | done |
 | 07 | [logging.md](logging.md) | not started |
 | 08 | [when-shiny.md](when-shiny.md) | not started |
-| 09 | [hunt-loop.md](hunt-loop.md) | not started |
+| 09 | [hunt-loop.md](hunt-loop.md) | in progress |
 
-Active: [poipole-sequence.md](poipole-sequence.md) (mash A 10s). Hunt loop is still unwired.
+Active: [hunt-loop.md](hunt-loop.md) (one attempt + miss SR). Plans 05 and 06 are done.

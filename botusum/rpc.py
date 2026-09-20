@@ -45,6 +45,12 @@ class RpcClient:
             raise RpcError(f"RPC read_memory returned no data at 0x{address:08X}")
         return data
 
+    def set_process(self, process_id: int) -> None:
+        try:
+            self._citra.set_process(process_id)
+        except (TimeoutError, socket.timeout, OSError) as exc:
+            raise RpcError(RPC_DISABLED_MESSAGE) from exc
+
     def wait_until_ready(self, timeout_s: float = RPC_WAIT_TIMEOUT_S) -> dict[int, tuple[int, str]]:
         deadline = time.time() + timeout_s
         last_error: BaseException | None = None

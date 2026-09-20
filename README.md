@@ -30,7 +30,7 @@ Azahar: **Emulation → Configuration → Debug → Enable RPC Server**.
 
 `python3 -m botusum` shows the hunt list, then launches Azahar with the ROM (`open -a Azahar.app --args …`) and checks UDP RPC on port 45987. **Ctrl+C** stops the bot and leaves Azahar running.
 
-`--hunt poipole` skips the list. An unimplemented row prints `not implemented` and does not start Azahar. `--probe-inputs` skips the list, focuses Azahar, taps A / B / Start, then holds L+R+Start (soft reset). Picking Poipole mashes A for 10 seconds (plan 05, first slice). The hunt loop is not wired yet. See `.claude/plans/`.
+`--hunt poipole` skips the list. An unimplemented row prints `not implemented` and does not start Azahar. `--probe-inputs` skips the list, focuses Azahar, taps A / B / Start, then holds L+R+Start (soft reset). `--parse-sv` skips the list, reads party RAM over RPC, decrypts PK7, and prints species / PID / TID / SID / `sv` / shiny (does not hunt, does not read the on-disk `main`). Picking Poipole mashes A for 31 seconds, taps B (no nickname), mashes A for 1 second, then reads party RAM and prints SV (plans 05–06). If Poipole is missing: `sv=-1  result=miss` and soft reset. No save, no hunt loop yet. See `.claude/plans/`.
 
 ## Logs
 

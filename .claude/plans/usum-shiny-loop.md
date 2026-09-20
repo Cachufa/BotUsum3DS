@@ -13,11 +13,11 @@ Work is split into:
 | 02 | [azahar-process.md](azahar-process.md) | Launch Azahar, load ROM, RPC server | done |
 | 03 | [inputs-macos.md](inputs-macos.md) | Keyboard, window focus, soft reset | done |
 | 04 | [picker.md](picker.md) | Interactive hunt list (Poipole first) | done |
-| 05 | [poipole-sequence.md](poipole-sequence.md) | Calibrate gift dialogue / receive / save | in progress |
-| 06 | [parse-shiny-value.md](parse-shiny-value.md) | RAM party, PK7 decrypt, SV | not started |
+| 05 | [poipole-sequence.md](poipole-sequence.md) | Calibrate gift dialogue / receive / save | done |
+| 06 | [parse-shiny-value.md](parse-shiny-value.md) | RAM party, PK7 decrypt, SV | done |
 | 07 | [logging.md](logging.md) | Terminal + files, resume attempt number | not started |
 | 08 | [when-shiny.md](when-shiny.md) | In-game save, incremental copy, stop | not started |
-| 09 | [hunt-loop.md](hunt-loop.md) | Wire the pieces into the repeat loop | not started |
+| 09 | [hunt-loop.md](hunt-loop.md) | Wire the pieces into the repeat loop | in progress |
 
 ## Goal
 
@@ -126,7 +126,7 @@ Loop skeleton (delays measured later):
 
 1. Title → Continue (A).
 2. Wait for overworld.
-3. Talk (A) and mash A through dialogue / receive / nickname (keep default name).
+3. Talk (A) and mash A through dialogue until **You received Poipole**. Then A (dismiss) → B (decline nickname) → mash A to finish adding it to the party. Do not open the save menu on a fail.
 4. Wait until party RAM has species **803** (Poipole).
 5. Compute SV.
 6. Fail → L+R+Start → back to 1. **Do not open the save menu.**
@@ -152,7 +152,7 @@ sv = ((pid >> 16) ^ (pid & 0xFFFF) ^ tid ^ sid) & 0xFFFF
 shiny iff sv < 16
 ```
 
-Log **sv** every attempt, not only yes/no. `--parse-sv` reads RAM (or a `main` on disk) without hunting.
+Log **sv** every attempt, not only yes/no. `--parse-sv` reads party RAM via RPC without hunting. It does **not** parse the on-disk `main` (save crypto is not PK7).
 
 If `0x33F7FA44` is wrong (update 1.2, region, Azahar vs Citra): plan 06 scans for a PK7 / species 803 and stores the offset. A `.3ds` cart dump is usually 1.0; confirm no 1.2 update in NAND.
 

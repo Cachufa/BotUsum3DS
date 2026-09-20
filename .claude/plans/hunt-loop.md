@@ -1,7 +1,7 @@
 # 9. Hunt loop
 
 - **Number:** 09 / 09
-- **Status:** requirements — not started
+- **Status:** in progress
 - **Parent:** [usum-shiny-loop.md](usum-shiny-loop.md)
 
 ## Goal
@@ -18,11 +18,12 @@ Unlike Jirachi, do **not** restore a backup `main` on fail.
 
 ## Steps
 
+- [x] One attempt: sequence then RAM SV (`run_poipole_once`). No loop / save yet.
 - [ ] Default command = loop.
 - [ ] Log every attempt.
 - [ ] Shiny → plan 08, exit 0.
 - [ ] `--max-attempts`.
-- [ ] Miss recovery.
+- [x] Miss: cannot read species 803 → `sv=-1  result=miss` and L+R+Start. `--parse-sv` does not SR.
 
 ## Out of scope
 

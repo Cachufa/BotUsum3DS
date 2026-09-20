@@ -9,9 +9,19 @@ from pathlib import Path
 
 from botusum.azahar import AzaharError, AzaharSession
 from botusum.inputs import PROBE_PAUSE_S, InputError, PadDriver
+from botusum.party import (
+    POIPOLE_SPECIES,
+    USUM_PARTY_ADDRESS,
+    PartyError,
+    PartyMon,
+    attach_game,
+    format_mon,
+    format_slot,
+    locate_species,
+)
 from botusum.paths import HuntPaths
 from botusum.picker import HuntSpec, PickerError, select_hunt
-from botusum.rpc import RPC_HOST, RPC_PORT
+from botusum.rpc import RPC_HOST, RPC_PORT, RpcClient, RpcError
 from botusum.sequence import run_poipole_sequence
 
 
@@ -36,6 +46,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--hunt",
         metavar="ID",
         help="Skip the picker (poipole, or a list number)",
+    )
+    parser.add_argument(
+        "--parse-sv",
+        action="store_true",
+        help="Read party RAM via RPC, decrypt PK7, print SV (no hunt)",
     )
     return parser
 
@@ -84,7 +99,8 @@ def print_rpc_ok(
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     hunt: HuntSpec | None = None
-    if not args.probe_inputs:
+    skip_picker = args.probe_inputs or args.parse_sv
+    if not skip_picker:
         try:
             hunt = select_hunt(args.hunt)
         except KeyboardInterrupt:
@@ -105,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
     print_header(paths)
     session = AzaharSession(paths)
     try:
-        reused, titles, _client, processes = session.ensure_ready()
+        reused, titles, client, processes = session.ensure_ready()
     except KeyboardInterrupt:
         print("Interrupted; leaving Azahar running", file=sys.stderr)
         return 130
@@ -119,26 +135,91 @@ def main(argv: list[str] | None = None) -> int:
         except KeyboardInterrupt:
             print("Interrupted; leaving Azahar running", file=sys.stderr)
             return 130
+    if args.parse_sv:
+        try:
+            return parse_sv(client)
+        except KeyboardInterrupt:
+            print("Interrupted; leaving Azahar running", file=sys.stderr)
+            return 130
     if hunt is not None:
         try:
-            return run_selected_hunt(session, hunt)
+            return run_selected_hunt(session, hunt, client)
         except KeyboardInterrupt:
             print("Interrupted; leaving Azahar running", file=sys.stderr)
             return 130
     return 0
 
 
-def run_selected_hunt(session: AzaharSession, hunt: HuntSpec) -> int:
+def read_party_sv(
+    client: RpcClient,
+    species: int,
+) -> tuple[int, list[PartyMon | None], PartyMon]:
+    proc_id, name = attach_game(client)
+    print(f"RPC process pid={proc_id} name={name}")
+    print(
+        f"Reading party RAM at 0x{USUM_PARTY_ADDRESS:08X} "
+        "(PK7 decrypt, not the on-disk save)"
+    )
+    return locate_species(client, species)
+
+
+def print_party_sv(
+    base: int,
+    slots: list[PartyMon | None],
+    mon: PartyMon,
+    species: int,
+) -> None:
+    for index, slot in enumerate(slots):
+        print(f"  {format_slot(slot, index)}")
+    if base != USUM_PARTY_ADDRESS:
+        print(
+            f"Stock pointer 0x{USUM_PARTY_ADDRESS:08X} had no species {species}; "
+            f"found PK7 at 0x{mon.address:08X}"
+        )
+    print(format_mon(mon))
+    print(f"address=0x{mon.address:08X}  slot={mon.slot}  checksum=ok")
+
+
+def parse_sv(client: RpcClient, species: int = POIPOLE_SPECIES) -> int:
+    try:
+        base, slots, mon = read_party_sv(client, species)
+    except (PartyError, RpcError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    print_party_sv(base, slots, mon, species)
+    return 0
+
+
+def run_poipole_once(pad: PadDriver, client: RpcClient, species: int) -> int:
+    """Receive Poipole, then read SV. Miss: sv=-1 and soft reset. No save."""
+    run_poipole_sequence(pad)
+    try:
+        base, slots, mon = read_party_sv(client, species)
+    except (PartyError, RpcError) as exc:
+        print(str(exc), file=sys.stderr)
+        print("sv=-1  result=miss")
+        print("Soft reset (L+R+Start)")
+        pad.soft_reset()
+        return 1
+    print_party_sv(base, slots, mon, species)
+    return 0
+
+
+def run_selected_hunt(
+    session: AzaharSession,
+    hunt: HuntSpec,
+    client: RpcClient,
+) -> int:
     if hunt.sequence != "poipole":
         print(f"{hunt.name} is not implemented.", file=sys.stderr)
         return 1
+    species = hunt.species if hunt.species is not None else POIPOLE_SPECIES
     try:
         pad = PadDriver(session)
-        run_poipole_sequence(pad)
+        return run_poipole_once(pad, client, species)
     except (AzaharError, InputError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
-    return 0
 
 
 def probe_inputs(session: AzaharSession) -> int:
