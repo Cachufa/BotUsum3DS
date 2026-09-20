@@ -10,7 +10,7 @@ Work is split into:
 | # | Plan | Topic | Status |
 |---|------|--------|--------|
 | 01 | [python-project.md](python-project.md) | Python layout, CLI, deps, gitignore | done |
-| 02 | [azahar-process.md](azahar-process.md) | Launch Azahar, load ROM, RPC server | not started |
+| 02 | [azahar-process.md](azahar-process.md) | Launch Azahar, load ROM, RPC server | done |
 | 03 | [inputs-macos.md](inputs-macos.md) | Keyboard, window focus, soft reset | not started |
 | 04 | [picker.md](picker.md) | Interactive hunt list (Poipole first) | not started |
 | 05 | [poipole-sequence.md](poipole-sequence.md) | Calibrate gift dialogue / receive / save | not started |

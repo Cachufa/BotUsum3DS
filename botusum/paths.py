@@ -38,6 +38,10 @@ def azahar_executable(app: Path) -> Path:
     return app
 
 
+def azahar_qt_config(user_dir: Path) -> Path:
+    return user_dir / "config" / "qt-config.ini"
+
+
 def ultra_moon_save(user_dir: Path) -> Path:
     return (
         user_dir
@@ -91,6 +95,10 @@ class HuntPaths:
     @property
     def azahar_binary(self) -> Path:
         return azahar_executable(self.azahar_app)
+
+    @property
+    def qt_config(self) -> Path:
+        return azahar_qt_config(self.azahar_user_dir)
 
     @property
     def ultra_moon_main(self) -> Path:
