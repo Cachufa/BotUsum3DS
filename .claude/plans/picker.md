@@ -1,7 +1,7 @@
 # 4. Picker
 
 - **Number:** 04 / 09
-- **Status:** requirements — not started
+- **Status:** done
 - **Parent:** [usum-shiny-loop.md](usum-shiny-loop.md)
 
 ## Goal
@@ -20,9 +20,9 @@ No GUI.
 
 ## Steps
 
-- [ ] Registry with Poipole as the only live hunt.
-- [ ] Interactive select (stdlib first).
-- [ ] Skip picker if a flag selects the hunt (optional, for tests).
+- [x] Registry with Poipole as the only live hunt.
+- [x] Interactive select (stdlib first).
+- [x] Skip picker if a flag selects the hunt (optional, for tests).
 
 ## Out of scope
 

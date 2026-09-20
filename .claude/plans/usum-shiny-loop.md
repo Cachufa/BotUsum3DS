@@ -12,7 +12,7 @@ Work is split into:
 | 01 | [python-project.md](python-project.md) | Python layout, CLI, deps, gitignore | done |
 | 02 | [azahar-process.md](azahar-process.md) | Launch Azahar, load ROM, RPC server | done |
 | 03 | [inputs-macos.md](inputs-macos.md) | Keyboard, window focus, soft reset | done |
-| 04 | [picker.md](picker.md) | Interactive hunt list (Poipole first) | not started |
+| 04 | [picker.md](picker.md) | Interactive hunt list (Poipole first) | done |
 | 05 | [poipole-sequence.md](poipole-sequence.md) | Calibrate gift dialogue / receive / save | not started |
 | 06 | [parse-shiny-value.md](parse-shiny-value.md) | RAM party, PK7 decrypt, SV | not started |
 | 07 | [logging.md](logging.md) | Terminal + files, resume attempt number | not started |

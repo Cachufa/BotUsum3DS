@@ -10,6 +10,7 @@ from pathlib import Path
 from botusum.azahar import AzaharError, AzaharSession
 from botusum.inputs import PROBE_PAUSE_S, InputError, PadDriver
 from botusum.paths import HuntPaths
+from botusum.picker import HuntSpec, PickerError, select_hunt
 from botusum.rpc import RPC_HOST, RPC_PORT
 
 
@@ -29,6 +30,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--probe-inputs",
         action="store_true",
         help="After Azahar boots: tap A, B, Start, then L+R+Start (soft reset)",
+    )
+    parser.add_argument(
+        "--hunt",
+        metavar="ID",
+        help="Skip the picker (poipole, or a list number)",
     )
     return parser
 
@@ -76,6 +82,20 @@ def print_rpc_ok(
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    hunt: HuntSpec | None = None
+    if not args.probe_inputs:
+        try:
+            hunt = select_hunt(args.hunt)
+        except KeyboardInterrupt:
+            print("Interrupted", file=sys.stderr)
+            return 130
+        except PickerError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        if not hunt.implemented:
+            print(f"{hunt.name} is not implemented.", file=sys.stderr)
+            return 1
+        print(f"Hunt: {hunt.name}  ({hunt.summary})")
     paths = resolve_paths(args)
     missing = paths.missing()
     if missing:
@@ -98,6 +118,8 @@ def main(argv: list[str] | None = None) -> int:
         except KeyboardInterrupt:
             print("Interrupted; leaving Azahar running", file=sys.stderr)
             return 130
+    if hunt is not None:
+        print(f"Selected {hunt.name}; hunt loop is not wired yet")
     return 0
 
 
