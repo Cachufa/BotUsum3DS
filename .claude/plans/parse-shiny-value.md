@@ -12,6 +12,8 @@ Read the party from Azahar RAM, decrypt PK7, compute shiny value. Log `sv` every
 
 RPC `read_memory`. Starting USUM party pointer (Citra; **verify on Azahar**): `0x33F7FA44`, slot stride 484 bytes.
 
+Plan 05 mash (10s A) stops on the received-Poipole box; species 803 should already be in the party then. Read SV there; do not tap further on a fail.
+
 After decrypt: species `0x08`, TID/SID `0x0C`/`0x0E`, PID `0x18`. Poipole = 803.
 
 PK7: EC at `0x00`, unshuffle four 56-byte blocks, XOR LCG `seed = seed * 0x41C64E6D + 0x6073`.

@@ -192,6 +192,22 @@ class PadDriver:
     def tap(self, button: str) -> None:
         self.session.tap_key(self._key(button))
 
+    def mash(
+        self,
+        button: str,
+        duration_s: float,
+        *,
+        hold_s: float | None = None,
+        gap_s: float,
+    ) -> int:
+        """Focus once, then tap `button` for `duration_s` seconds."""
+        return self.session.mash_key(
+            self._key(button),
+            duration_s,
+            hold_s=hold_s,
+            gap_s=gap_s,
+        )
+
     def hold(self, *buttons: str, hold_s: float = SOFT_RESET_HOLD_S) -> None:
         if not buttons:
             raise InputError("hold needs at least one button")

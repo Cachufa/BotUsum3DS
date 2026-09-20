@@ -264,6 +264,81 @@ class AzaharSession:
         worker.join(timeout=as_delay + 2.0)
         self._raise_hid_error(hid_error)
 
+    def mash_key(
+        self,
+        key: str,
+        duration_s: float,
+        *,
+        hold_s: float | None = None,
+        gap_s: float = 0.05,
+    ) -> int:
+        """Focus once, then tap `key` repeatedly for `duration_s` seconds.
+
+        Per-tap `tap_key` re-runs the focus applescript (~1.6s) and is too
+        slow for dialogue mash. Returns how many taps were sent.
+        """
+        from botusum.inputs import HOLD_S, left_click_at, tap_key as hid_tap
+
+        duration = max(float(duration_s), 0.0)
+        if duration <= 0:
+            return 0
+        title, x, y, w, h = self._game_frame()
+        process_name = self._ax_process_name()
+        if process_name is None:
+            raise AzaharError("Azahar window not found")
+        escaped = title.replace("\\", "\\\\").replace('"', '\\"')
+        cx = x + max(w // 2, 8)
+        cy = y + max(28 + (h - 28) // 2, 40)
+        hold = HOLD_S if hold_s is None else max(float(hold_s), 0.0)
+        gap = max(float(gap_s), 0.0)
+        hid_lead = 0.72
+        as_delay = max(1.6, hid_lead + duration + 0.4)
+        hid_error: list[BaseException] = []
+        taps_done = [0]
+
+        def send_hid() -> None:
+            try:
+                time.sleep(0.5)
+                left_click_at(cx, cy)
+                time.sleep(0.22)
+                deadline = time.monotonic() + duration
+                while time.monotonic() < deadline:
+                    hid_tap(key, hold_s=hold)
+                    taps_done[0] += 1
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        break
+                    time.sleep(min(gap, remaining))
+            except BaseException as exc:
+                hid_error.append(exc)
+
+        worker = threading.Thread(target=send_hid, daemon=True)
+        worker.start()
+        _applescript(
+            f"""
+            tell application "System Events"
+              tell process "{process_name}"
+                set frontmost to true
+                delay 0.1
+                repeat with w in windows
+                  try
+                    if (name of w as text) is "{escaped}" then
+                      perform action "AXRaise" of w
+                      set index of w to 1
+                      exit repeat
+                    end if
+                  end try
+                end repeat
+                delay 0.2
+              end tell
+              delay {as_delay:.3f}
+            end tell
+            """
+        )
+        worker.join(timeout=as_delay + 2.0)
+        self._raise_hid_error(hid_error)
+        return taps_done[0]
+
     def hold_keys(self, keys: list[str], hold_s: float = 0.5) -> None:
         """Hold several mapped keys at once (e.g. L+R+Start)."""
         from botusum.inputs import left_click_at, press_key, release_key

@@ -12,6 +12,7 @@ from botusum.inputs import PROBE_PAUSE_S, InputError, PadDriver
 from botusum.paths import HuntPaths
 from botusum.picker import HuntSpec, PickerError, select_hunt
 from botusum.rpc import RPC_HOST, RPC_PORT
+from botusum.sequence import run_poipole_sequence
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -119,7 +120,24 @@ def main(argv: list[str] | None = None) -> int:
             print("Interrupted; leaving Azahar running", file=sys.stderr)
             return 130
     if hunt is not None:
-        print(f"Selected {hunt.name}; hunt loop is not wired yet")
+        try:
+            return run_selected_hunt(session, hunt)
+        except KeyboardInterrupt:
+            print("Interrupted; leaving Azahar running", file=sys.stderr)
+            return 130
+    return 0
+
+
+def run_selected_hunt(session: AzaharSession, hunt: HuntSpec) -> int:
+    if hunt.sequence != "poipole":
+        print(f"{hunt.name} is not implemented.", file=sys.stderr)
+        return 1
+    try:
+        pad = PadDriver(session)
+        run_poipole_sequence(pad)
+    except (AzaharError, InputError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
     return 0
 
 

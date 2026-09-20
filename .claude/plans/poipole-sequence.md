@@ -1,7 +1,7 @@
 # 5. Poipole sequence
 
 - **Number:** 05 / 09
-- **Status:** requirements — not started
+- **Status:** in progress
 - **Parent:** [usum-shiny-loop.md](usum-shiny-loop.md)
 
 ## Goal
@@ -16,15 +16,16 @@ Skeleton:
 
 1. Title → Continue (A).
 2. Wait for overworld.
-3. Talk (A); mash A through dialogue / receive / nickname (keep default).
-4. Wait until party has species 803 (depends on plan 06).
-5. Fail → L+R+Start → step 1.
-6. Shiny → save menu (plan 08).
+3. Talk (A); mash A through dialogue until **You received Poipole**.
+4. Wait until party has species 803 (plan 06). At the receive box, Poipole should already be in the party.
+5. Fail → L+R+Start → step 1. **Do not mash further** (that would leave the receive box and risk a save).
+6. Shiny → extra A / nickname / save menu (plan 08).
 
 ## Steps
 
-- [ ] Record one manual attempt and write hold/wait constants.
-- [ ] Title → Continue → talk → receive.
+- [x] Mash A for 10s (`MASH_A_DURATION_S` / `MASH_A_GAP_S` in `botusum/sequence.py`; `PadDriver.mash` focuses once).
+- [x] Recorded: 10s mash from the parked save stops on the received-Poipole box; party should already have 803. Extra taps for nickname/save are plan 08.
+- [ ] Title → Continue as a separate wait (currently folded into the 10s mash).
 - [ ] Soft reset back to title.
 
 ## Out of scope

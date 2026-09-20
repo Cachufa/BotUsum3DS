@@ -10,7 +10,7 @@ On SV &lt; 16: save in-game, copy Azahar’s `main` to `resources/main-poipole-s
 
 ## Context
 
-1. Menu (X / `Z`) → Save. Wait for `main` mtime/size flush.
+1. After plan 05 the bot is on **You received Poipole**. Extra A to leave that box / nickname (keep default) / overworld, then menu (X / `Z`) → Save. Wait for `main` mtime/size flush.
 2. Copy to `resources/main-poipole-shiny-N` (N = 1 + max existing).
 3. Attempt line `result=shiny` + `logs/shiny.txt`:
 
