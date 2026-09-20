@@ -28,7 +28,9 @@ Azahar: **Emulation → Configuration → Debug → Enable RPC Server**.
 
 **Ctrl+C** stops the bot and leaves Azahar as it is.
 
-`python3 -m botusum` launches Azahar with the ROM (`open -a Azahar.app --args …`) and checks UDP RPC on port 45987. **Ctrl+C** stops the bot and leaves Azahar running. The hunt loop is not wired yet. See `.claude/plans/`.
+`python3 -m botusum` launches Azahar with the ROM (`open -a Azahar.app --args …`) and checks UDP RPC on port 45987. **Ctrl+C** stops the bot and leaves Azahar running.
+
+`--probe-inputs` focuses Azahar, taps A / B / Start, then holds L+R+Start (soft reset) with visible delays. The hunt loop is not wired yet. See `.claude/plans/`.
 
 ## Logs
 

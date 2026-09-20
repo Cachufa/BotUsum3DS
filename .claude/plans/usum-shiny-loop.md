@@ -11,7 +11,7 @@ Work is split into:
 |---|------|--------|--------|
 | 01 | [python-project.md](python-project.md) | Python layout, CLI, deps, gitignore | done |
 | 02 | [azahar-process.md](azahar-process.md) | Launch Azahar, load ROM, RPC server | done |
-| 03 | [inputs-macos.md](inputs-macos.md) | Keyboard, window focus, soft reset | not started |
+| 03 | [inputs-macos.md](inputs-macos.md) | Keyboard, window focus, soft reset | done |
 | 04 | [picker.md](picker.md) | Interactive hunt list (Poipole first) | not started |
 | 05 | [poipole-sequence.md](poipole-sequence.md) | Calibrate gift dialogue / receive / save | not started |
 | 06 | [parse-shiny-value.md](parse-shiny-value.md) | RAM party, PK7 decrypt, SV | not started |
@@ -109,7 +109,7 @@ Arrow keys or number + Enter. Each future hunt is a registry row (`id`, game, RO
 
 ## Inputs
 
-`pynput`, focus Azahar, configurable hold/gap.
+`pynput`, focus Azahar, tap a mapped key. Soft reset holds L+R+Start. Dialogue waits are plan 05, not pad timing.
 
 `--probe-inputs`: tap A, B, Start, then L+R+Start with visible delays.
 

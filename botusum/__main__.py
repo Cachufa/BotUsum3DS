@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from pathlib import Path
 
 from botusum.azahar import AzaharError, AzaharSession
+from botusum.inputs import PROBE_PAUSE_S, InputError, PadDriver
 from botusum.paths import HuntPaths
 from botusum.rpc import RPC_HOST, RPC_PORT
 
@@ -22,6 +24,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--azahar-user-dir",
         type=Path,
         help="Azahar user data directory",
+    )
+    parser.add_argument(
+        "--probe-inputs",
+        action="store_true",
+        help="After Azahar boots: tap A, B, Start, then L+R+Start (soft reset)",
     )
     return parser
 
@@ -85,6 +92,43 @@ def main(argv: list[str] | None = None) -> int:
         print(str(exc), file=sys.stderr)
         return 1
     print_rpc_ok(reused, titles, processes)
+    if args.probe_inputs:
+        try:
+            return probe_inputs(session)
+        except KeyboardInterrupt:
+            print("Interrupted; leaving Azahar running", file=sys.stderr)
+            return 130
+    return 0
+
+
+def probe_inputs(session: AzaharSession) -> int:
+    try:
+        pad = PadDriver(session)
+        print(
+            "Input map: "
+            f"A={pad.button_map['A']!r} "
+            f"B={pad.button_map['B']!r} "
+            f"Start={pad.button_map['Start']!r} "
+            f"L={pad.button_map['L']!r} "
+            f"R={pad.button_map['R']!r}"
+        )
+        print("Focus Azahar, tap A")
+        pad.tap("A")
+        time.sleep(PROBE_PAUSE_S)
+        print("Tap B")
+        pad.tap("B")
+        time.sleep(PROBE_PAUSE_S)
+        print("Tap Start")
+        pad.tap("Start")
+        time.sleep(PROBE_PAUSE_S)
+        print("Soft reset (L+R+Start)")
+        pad.soft_reset()
+    except (AzaharError, InputError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    print("Input probe sent. Windows:")
+    for title in session.window_titles():
+        print(f"  window: {title}")
     return 0
 
 
