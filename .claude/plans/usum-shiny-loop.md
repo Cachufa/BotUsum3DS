@@ -16,7 +16,7 @@ Work is split into:
 | 05 | [poipole-sequence.md](poipole-sequence.md) | Calibrate gift dialogue / receive / save | done |
 | 06 | [parse-shiny-value.md](parse-shiny-value.md) | RAM party, PK7 decrypt, SV | done |
 | 07 | [logging.md](logging.md) | Terminal + files, resume attempt number | done |
-| 08 | [when-shiny.md](when-shiny.md) | In-game save, incremental copy, stop | not started |
+| 08 | [when-shiny.md](when-shiny.md) | In-game save, incremental copy, stop | done |
 | 09 | [hunt-loop.md](hunt-loop.md) | Wire the pieces into the repeat loop | in progress |
 
 ## Goal
@@ -130,7 +130,7 @@ Loop skeleton (delays measured later):
 4. Wait until party RAM has species **803** (Poipole).
 5. Compute SV.
 6. Fail → L+R+Start → back to 1. **Do not open the save menu.**
-7. Shiny → menu (X / `Z`) → Save → wait for `main` mtime/size flush → copy to `resources/` → stop.
+7. Shiny → wait 2s → X → Y → A, A (save) → wait for `main` mtime/size flush → copy to `resources/` → stop.
 
 ## Memory / shiny test
 

@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 from botusum.azahar import AzaharError, AzaharSession
-from botusum.huntlog import HuntLog
+from botusum.huntlog import HuntLog, result_for_sv
 from botusum.inputs import PROBE_PAUSE_S, InputError, PadDriver
 from botusum.party import (
     POIPOLE_SPECIES,
@@ -23,7 +23,14 @@ from botusum.party import (
 from botusum.paths import HuntPaths
 from botusum.picker import HuntSpec, PickerError, select_hunt
 from botusum.rpc import RPC_HOST, RPC_PORT, RpcClient, RpcError
-from botusum.sequence import run_poipole_sequence
+from botusum.sequence import SequenceError, run_poipole_sequence, save_game
+from botusum.shiny import (
+    FORCE_SHINY_SV,
+    ShinyError,
+    file_fingerprint,
+    handle_shiny,
+    wait_for_main_flush,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -52,6 +59,15 @@ def build_parser() -> argparse.ArgumentParser:
         "--parse-sv",
         action="store_true",
         help="Read party RAM via RPC, decrypt PK7, print SV (no hunt)",
+    )
+    parser.add_argument(
+        "--force-shiny",
+        action="store_true",
+        help=(
+            "Fake a shiny hit. Alone: copy Azahar main to "
+            "resources/main-poipole-shiny-N without hunting. "
+            "With --hunt: one receive then in-game save (X, Y, A, A)"
+        ),
     )
     return parser
 
@@ -99,9 +115,20 @@ def print_rpc_ok(
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    paths = resolve_paths(args)
+    if args.force_shiny and args.hunt is None:
+        return run_force_shiny(paths)
     hunt: HuntSpec | None = None
     skip_picker = args.probe_inputs or args.parse_sv
     if not skip_picker:
+        hunt_log = HuntLog(paths.logs_dir)
+        if hunt_log.last_logged_result() == "shiny" and not args.force_shiny:
+            print(
+                "Shiny already logged; not hunting. "
+                f"See {hunt_log.shiny_path}",
+                file=sys.stderr,
+            )
+            return 0
         try:
             hunt = select_hunt(args.hunt)
         except KeyboardInterrupt:
@@ -114,7 +141,6 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{hunt.name} is not implemented.", file=sys.stderr)
             return 1
         print(f"Hunt: {hunt.name}  ({hunt.summary})")
-    paths = resolve_paths(args)
     missing = paths.missing()
     if missing:
         report_missing(missing)
@@ -144,7 +170,9 @@ def main(argv: list[str] | None = None) -> int:
             return 130
     if hunt is not None:
         try:
-            return run_selected_hunt(session, hunt, client)
+            return run_selected_hunt(
+                session, hunt, client, force_save=args.force_shiny,
+            )
         except KeyboardInterrupt:
             print("Interrupted; leaving Azahar running", file=sys.stderr)
             return 130
@@ -214,8 +242,10 @@ def run_poipole_once(
     client: RpcClient,
     species: int,
     hunt_log: HuntLog | None = None,
+    paths: HuntPaths | None = None,
+    force_save: bool = False,
 ) -> int:
-    """Receive Poipole, then read SV. Miss: sv=-1 and soft reset. No save."""
+    """Receive Poipole, then read SV. Miss: sv=-1 and soft reset. Shiny: save."""
     attempt = hunt_log.next_attempt_number() if hunt_log is not None else None
     started_at = time.perf_counter() if hunt_log is not None else None
     run_poipole_sequence(pad)
@@ -230,6 +260,40 @@ def run_poipole_once(
         pad.soft_reset()
         return 1
     print_party_sv(base, slots, mon, species)
+    result = result_for_sv(mon.sv)
+    take_save = result == "shiny" or force_save
+    if (
+        hunt_log is not None
+        and paths is not None
+        and attempt is not None
+        and started_at is not None
+        and take_save
+    ):
+        duration_s = time.perf_counter() - started_at
+        if force_save and result != "shiny":
+            print("Force save: in-game save after receive (timing test)")
+        try:
+            before = file_fingerprint(paths.ultra_moon_main)
+            save_game(pad)
+            wait_for_main_flush(paths.ultra_moon_main, before)
+        except (SequenceError, ShinyError, OSError) as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        if result == "shiny":
+            return handle_shiny(
+                hunt_log,
+                attempt=attempt,
+                duration_s=duration_s,
+                sv=mon.sv,
+                live_main=paths.ultra_moon_main,
+                resources_dir=paths.resources_dir,
+                repo_root=paths.repo_root,
+            )
+        print(
+            "Force save: in-game save done. Restore the parked hunt save "
+            "before hunting again.",
+            file=sys.stderr,
+        )
     log_attempt(hunt_log, attempt=attempt, started_at=started_at, sv=mon.sv)
     return 0
 
@@ -238,6 +302,7 @@ def run_selected_hunt(
     session: AzaharSession,
     hunt: HuntSpec,
     client: RpcClient,
+    force_save: bool = False,
 ) -> int:
     if hunt.sequence != "poipole":
         print(f"{hunt.name} is not implemented.", file=sys.stderr)
@@ -248,8 +313,32 @@ def run_selected_hunt(
     hunt_log.write_run_header(started, next_attempt)
     try:
         pad = PadDriver(session)
-        return run_poipole_once(pad, client, species, hunt_log)
+        return run_poipole_once(
+            pad, client, species, hunt_log, session.paths,
+            force_save=force_save,
+        )
     except (AzaharError, InputError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+
+def run_force_shiny(paths: HuntPaths) -> int:
+    """Shiny path without hunting or Azahar. Copies the live `main` as-is."""
+    hunt_log = HuntLog(paths.logs_dir)
+    started, next_attempt = hunt_log.prepare()
+    hunt_log.write_run_header(started, next_attempt)
+    print("Force shiny: skipping hunt and Azahar")
+    try:
+        return handle_shiny(
+            hunt_log,
+            attempt=next_attempt,
+            duration_s=0.0,
+            sv=FORCE_SHINY_SV,
+            live_main=paths.ultra_moon_main,
+            resources_dir=paths.resources_dir,
+            repo_root=paths.repo_root,
+        )
+    except ShinyError as exc:
         print(str(exc), file=sys.stderr)
         return 1
 

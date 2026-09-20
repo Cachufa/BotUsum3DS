@@ -18,10 +18,10 @@ Unlike Jirachi, do **not** restore a backup `main` on fail.
 
 ## Steps
 
-- [x] One attempt: sequence then RAM SV (`run_poipole_once`). No loop / save yet.
+- [x] One attempt: sequence then RAM SV (`run_poipole_once`). Save is plan 08. No loop yet.
 - [ ] Default command = loop.
 - [x] Log every attempt.
-- [ ] Shiny → plan 08, exit 0.
+- [x] Shiny → plan 08, exit 0.
 - [ ] `--max-attempts`.
 - [x] Miss: cannot read species 803 → `sv=-1  result=miss` and L+R+Start. `--parse-sv` does not SR.
 

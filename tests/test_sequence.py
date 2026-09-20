@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from botusum.inputs import PadDriver
 from botusum.sequence import (
     MASH_A_AFTER_B_S,
     MASH_A_DURATION_S,
     MASH_A_GAP_S,
+    SAVE_TO_OVERWORLD_WAIT_S,
     run_poipole_sequence,
+    save_game,
 )
 
 
@@ -57,6 +60,15 @@ class SequenceTests(unittest.TestCase):
         )
         self.assertEqual(MASH_A_DURATION_S, 31.0)
         self.assertEqual(MASH_A_AFTER_B_S, 1.0)
+
+    def test_save_game_x_y_then_two_a(self) -> None:
+        pad = FakePad()
+        with patch("botusum.sequence.time.sleep") as slept:
+            save_game(pad)
+        slept.assert_called_once_with(SAVE_TO_OVERWORLD_WAIT_S)
+        self.assertEqual(SAVE_TO_OVERWORLD_WAIT_S, 2.0)
+        self.assertEqual(pad.calls, [])
+        self.assertEqual(pad.taps, ["X", "Y", "A", "A"])
 
     def test_pad_mash_maps_a_to_session(self) -> None:
         session = FakeSession()

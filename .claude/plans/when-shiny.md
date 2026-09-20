@@ -1,7 +1,7 @@
 # 8. When shiny
 
 - **Number:** 08 / 09
-- **Status:** requirements — not started
+- **Status:** done
 - **Parent:** [usum-shiny-loop.md](usum-shiny-loop.md)
 
 ## Goal
@@ -10,7 +10,7 @@ On SV &lt; 16: save in-game, copy Azahar’s `main` to `resources/main-poipole-s
 
 ## Context
 
-1. After plan 05 the bot is on **You received Poipole**. Extra A to leave that box / nickname (keep default) / overworld, then menu (X / `Z`) → Save. Wait for `main` mtime/size flush.
+1. After plan 05 the receive sequence has already declined the nickname. Wait `SAVE_TO_OVERWORLD_WAIT_S` (2s, extra dialogue), then X, Y, A, A to save. Overworld mash A is dropped for now. Wait for `main` mtime/size flush. `--hunt poipole --force-shiny` runs receive then that save for timing (does not log `result=shiny` unless SV &lt; 16).
 2. Copy to `resources/main-poipole-shiny-N` (N = 1 + max existing).
 3. Attempt line `result=shiny` + `logs/shiny.txt`:
 
@@ -27,11 +27,11 @@ Live Azahar `main` keeps the shiny. `resources/` copies are the incremental arch
 
 ## Steps
 
-- [ ] In-game save + wait for flush.
-- [ ] Incremental copy.
-- [ ] Summary log + stub notify.
-- [ ] Skip hunt if last result is shiny.
-- [ ] `--force-shiny`.
+- [x] In-game save + wait for flush.
+- [x] Incremental copy.
+- [x] Summary log + stub notify.
+- [x] Skip hunt if last result is shiny.
+- [x] `--force-shiny`.
 
 ## Out of scope
 
