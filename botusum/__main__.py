@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 from botusum.azahar import AzaharError, AzaharSession
+from botusum.huntlog import HuntLog
 from botusum.inputs import PROBE_PAUSE_S, InputError, PadDriver
 from botusum.party import (
     POIPOLE_SPECIES,
@@ -190,18 +191,46 @@ def parse_sv(client: RpcClient, species: int = POIPOLE_SPECIES) -> int:
     return 0
 
 
-def run_poipole_once(pad: PadDriver, client: RpcClient, species: int) -> int:
+def log_attempt(
+    hunt_log: HuntLog | None,
+    *,
+    attempt: int | None,
+    started_at: float | None,
+    sv: int,
+    result: str | None = None,
+) -> None:
+    if hunt_log is None or attempt is None or started_at is None:
+        return
+    hunt_log.write_attempt(
+        attempt=attempt,
+        duration_s=time.perf_counter() - started_at,
+        sv=sv,
+        result=result,
+    )
+
+
+def run_poipole_once(
+    pad: PadDriver,
+    client: RpcClient,
+    species: int,
+    hunt_log: HuntLog | None = None,
+) -> int:
     """Receive Poipole, then read SV. Miss: sv=-1 and soft reset. No save."""
+    attempt = hunt_log.next_attempt_number() if hunt_log is not None else None
+    started_at = time.perf_counter() if hunt_log is not None else None
     run_poipole_sequence(pad)
     try:
         base, slots, mon = read_party_sv(client, species)
     except (PartyError, RpcError) as exc:
         print(str(exc), file=sys.stderr)
-        print("sv=-1  result=miss")
+        log_attempt(hunt_log, attempt=attempt, started_at=started_at, sv=-1)
+        if hunt_log is None:
+            print("sv=-1  result=miss")
         print("Soft reset (L+R+Start)")
         pad.soft_reset()
         return 1
     print_party_sv(base, slots, mon, species)
+    log_attempt(hunt_log, attempt=attempt, started_at=started_at, sv=mon.sv)
     return 0
 
 
@@ -214,9 +243,12 @@ def run_selected_hunt(
         print(f"{hunt.name} is not implemented.", file=sys.stderr)
         return 1
     species = hunt.species if hunt.species is not None else POIPOLE_SPECIES
+    hunt_log = HuntLog(session.paths.logs_dir)
+    started, next_attempt = hunt_log.prepare()
+    hunt_log.write_run_header(started, next_attempt)
     try:
         pad = PadDriver(session)
-        return run_poipole_once(pad, client, species)
+        return run_poipole_once(pad, client, species, hunt_log)
     except (AzaharError, InputError) as exc:
         print(str(exc), file=sys.stderr)
         return 1

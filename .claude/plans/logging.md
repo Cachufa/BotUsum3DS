@@ -1,7 +1,7 @@
 # 7. Logging
 
 - **Number:** 07 / 09
-- **Status:** requirements — not started
+- **Status:** done
 - **Parent:** [usum-shiny-loop.md](usum-shiny-loop.md)
 
 ## Goal
@@ -26,10 +26,10 @@ Mirror `botjirachi/huntlog.py` as needed.
 
 ## Steps
 
-- [ ] Dual write (print + append).
-- [ ] Parse last attempt on startup.
-- [ ] Persist hunt start timestamp.
-- [ ] Run header optional; no secrets.
+- [x] Dual write (print + append).
+- [x] Parse last attempt on startup.
+- [x] Persist hunt start timestamp.
+- [x] Run header optional; no secrets.
 
 ## Out of scope
 

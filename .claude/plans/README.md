@@ -35,8 +35,8 @@ Split (implement in this order). Status values: `requirements â€” not started` â
 | 04 | [picker.md](picker.md) | done |
 | 05 | [poipole-sequence.md](poipole-sequence.md) | done |
 | 06 | [parse-shiny-value.md](parse-shiny-value.md) | done |
-| 07 | [logging.md](logging.md) | not started |
+| 07 | [logging.md](logging.md) | done |
 | 08 | [when-shiny.md](when-shiny.md) | not started |
 | 09 | [hunt-loop.md](hunt-loop.md) | in progress |
 
-Active: [hunt-loop.md](hunt-loop.md) (one attempt + miss SR). Plans 05 and 06 are done.
+Active: [hunt-loop.md](hunt-loop.md) (one attempt + miss SR + attempt log). Remaining: 08 when-shiny, 09 hunt-loop.

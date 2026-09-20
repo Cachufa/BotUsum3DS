@@ -15,7 +15,7 @@ Work is split into:
 | 04 | [picker.md](picker.md) | Interactive hunt list (Poipole first) | done |
 | 05 | [poipole-sequence.md](poipole-sequence.md) | Calibrate gift dialogue / receive / save | done |
 | 06 | [parse-shiny-value.md](parse-shiny-value.md) | RAM party, PK7 decrypt, SV | done |
-| 07 | [logging.md](logging.md) | Terminal + files, resume attempt number | not started |
+| 07 | [logging.md](logging.md) | Terminal + files, resume attempt number | done |
 | 08 | [when-shiny.md](when-shiny.md) | In-game save, incremental copy, stop | not started |
 | 09 | [hunt-loop.md](hunt-loop.md) | Wire the pieces into the repeat loop | in progress |
 

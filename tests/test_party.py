@@ -5,8 +5,11 @@ from __future__ import annotations
 import io
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from botusum.__main__ import build_parser, run_poipole_once
+from botusum.huntlog import HuntLog
 from botusum.party import (
     PARTY_SLOT_STRIDE,
     PARTY_SLOTS,
@@ -219,6 +222,27 @@ class ReceiveAndParseTests(unittest.TestCase):
         self.assertEqual(pad.resets, 1)
         self.assertIn("sv=-1  result=miss", stdout.getvalue())
 
+    def test_miss_dual_writes_attempt_line(self) -> None:
+        client = MemoryRpc(_party_blob(), USUM_PARTY_ADDRESS)
+        pad = FakePad()
+        stdout = io.StringIO()
+        with TemporaryDirectory() as tmp:
+            hunt_log = HuntLog(Path(tmp), stdout=stdout)
+            hunt_log.prepare()
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                code = run_poipole_once(
+                    pad, client, 803, hunt_log,  # type: ignore[arg-type]
+                )
+            self.assertEqual(code, 1)
+            self.assertEqual(pad.resets, 1)
+            self.assertEqual(hunt_log.next_attempt_number(), 2)
+            line = hunt_log.attempts_path.read_text(encoding="utf-8").strip()
+            self.assertIn("attempt=1", line)
+            self.assertIn("sv=-1", line)
+            self.assertIn("result=miss", line)
+            self.assertEqual(stdout.getvalue().splitlines()[-1], line)
+
 
 if __name__ == "__main__":
     unittest.main()
+
