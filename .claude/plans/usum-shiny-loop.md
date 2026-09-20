@@ -17,7 +17,7 @@ Work is split into:
 | 06 | [parse-shiny-value.md](parse-shiny-value.md) | RAM party, PK7 decrypt, SV | done |
 | 07 | [logging.md](logging.md) | Terminal + files, resume attempt number | done |
 | 08 | [when-shiny.md](when-shiny.md) | In-game save, incremental copy, stop | done |
-| 09 | [hunt-loop.md](hunt-loop.md) | Wire the pieces into the repeat loop | in progress |
+| 09 | [hunt-loop.md](hunt-loop.md) | Wire the pieces into the repeat loop | done |
 
 ## Goal
 
@@ -179,7 +179,7 @@ Shiny extra line (`logs/shiny.txt` + stdout):
 SHINY  2026-09-20T19:10:00Z  attempts=3759  total_s=123456.7  sv=7  save=resources/main-poipole-shiny-1
 ```
 
-`result=miss` / `sv=-1` if Poipole never appears (desync). Recovery: extra SR, or relaunch Azahar if stuck (define in plan 09).
+`result=miss` / `sv=-1` if Poipole never appears (desync). Recovery: extra L+R+Start. Do not relaunch Azahar; do not restore a backup `main`.
 
 ## When shiny
 

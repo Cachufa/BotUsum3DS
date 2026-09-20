@@ -37,6 +37,6 @@ Split (implement in this order). Status values: `requirements — not started` �
 | 06 | [parse-shiny-value.md](parse-shiny-value.md) | done |
 | 07 | [logging.md](logging.md) | done |
 | 08 | [when-shiny.md](when-shiny.md) | done |
-| 09 | [hunt-loop.md](hunt-loop.md) | in progress |
+| 09 | [hunt-loop.md](hunt-loop.md) | done |
 
-Active: [hunt-loop.md](hunt-loop.md). Remaining: 09 hunt-loop (default loop, `--max-attempts`).
+No active split plan. 01–09 are done. Umbrella: [usum-shiny-loop.md](usum-shiny-loop.md).

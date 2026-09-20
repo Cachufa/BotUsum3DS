@@ -69,6 +69,13 @@ def build_parser() -> argparse.ArgumentParser:
             "With --hunt: one receive then in-game save (X, Y, A, A)"
         ),
     )
+    parser.add_argument(
+        "--max-attempts",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Stop the hunt loop after N logged attempts (fail, miss, or shiny)",
+    )
     return parser
 
 
@@ -171,7 +178,11 @@ def main(argv: list[str] | None = None) -> int:
     if hunt is not None:
         try:
             return run_selected_hunt(
-                session, hunt, client, force_save=args.force_shiny,
+                session,
+                hunt,
+                client,
+                force_save=args.force_shiny,
+                max_attempts=args.max_attempts,
             )
         except KeyboardInterrupt:
             print("Interrupted; leaving Azahar running", file=sys.stderr)
@@ -303,20 +314,50 @@ def run_selected_hunt(
     hunt: HuntSpec,
     client: RpcClient,
     force_save: bool = False,
+    max_attempts: int | None = None,
+    pad: PadDriver | None = None,
 ) -> int:
+    """Repeat receive until shiny, Ctrl+C, or `--max-attempts`.
+
+    Fail: L+R+Start, no in-game save, no backup `main` restore.
+    Miss (`sv=-1`): extra L+R+Start (already done in `run_poipole_once`).
+    `--hunt … --force-shiny` is one timing-test receive, not a loop.
+    """
     if hunt.sequence != "poipole":
         print(f"{hunt.name} is not implemented.", file=sys.stderr)
+        return 1
+    if max_attempts is not None and max_attempts < 1:
+        print("--max-attempts must be >= 1", file=sys.stderr)
         return 1
     species = hunt.species if hunt.species is not None else POIPOLE_SPECIES
     hunt_log = HuntLog(session.paths.logs_dir)
     started, next_attempt = hunt_log.prepare()
     hunt_log.write_run_header(started, next_attempt)
     try:
-        pad = PadDriver(session)
-        return run_poipole_once(
-            pad, client, species, hunt_log, session.paths,
-            force_save=force_save,
-        )
+        if pad is None:
+            pad = PadDriver(session)
+        if force_save:
+            return run_poipole_once(
+                pad, client, species, hunt_log, session.paths,
+                force_save=True,
+            )
+        logged = 0
+        while True:
+            code = run_poipole_once(
+                pad, client, species, hunt_log, session.paths,
+            )
+            result = hunt_log.last_logged_result()
+            if result == "shiny":
+                return 0
+            if result not in ("fail", "miss"):
+                return 1 if code else 0
+            if result == "fail":
+                print("Soft reset (L+R+Start)")
+                pad.soft_reset()
+            logged += 1
+            if max_attempts is not None and logged >= max_attempts:
+                print(f"Stopped after {logged} attempt(s) (--max-attempts)")
+                return 0
     except (AzaharError, InputError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
