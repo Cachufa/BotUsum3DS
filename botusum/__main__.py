@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 
 from botusum.azahar import AzaharError, AzaharSession
@@ -23,9 +24,16 @@ from botusum.party import (
 from botusum.paths import HuntPaths
 from botusum.picker import HuntSpec, PickerError, select_hunt
 from botusum.rpc import RPC_HOST, RPC_PORT, RpcClient, RpcError
-from botusum.sequence import SequenceError, run_poipole_sequence, save_game
+from botusum.sequence import (
+    SequenceError,
+    run_poipole_sequence,
+    run_type_null_sequence,
+    save_game,
+    save_type_null,
+)
 from botusum.shiny import (
     FORCE_SHINY_SV,
+    SHINY_ARCHIVE_STEM,
     ShinyError,
     file_fingerprint,
     handle_shiny,
@@ -53,7 +61,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--hunt",
         metavar="ID",
-        help="Skip the picker (poipole, or a list number)",
+        help="Skip the picker (poipole, type-null, or a list number)",
     )
     parser.add_argument(
         "--parse-sv",
@@ -128,8 +136,15 @@ def main(argv: list[str] | None = None) -> int:
     hunt: HuntSpec | None = None
     skip_picker = args.probe_inputs or args.parse_sv
     if not skip_picker:
+        requested = (args.hunt or "").strip().lower()
+        # The logged shiny is the Poipole hunt. Another hunt uses its own log.
+        blocks_on_poipole_shiny = requested in {"", "poipole", "1"}
         hunt_log = HuntLog(paths.logs_dir)
-        if hunt_log.last_logged_result() == "shiny" and not args.force_shiny:
+        if (
+            blocks_on_poipole_shiny
+            and hunt_log.last_logged_result() == "shiny"
+            and not args.force_shiny
+        ):
             print(
                 "Shiny already logged; not hunting. "
                 f"See {hunt_log.shiny_path}",
@@ -255,11 +270,14 @@ def run_poipole_once(
     hunt_log: HuntLog | None = None,
     paths: HuntPaths | None = None,
     force_save: bool = False,
+    sequence: Callable[[PadDriver], int] = run_poipole_sequence,
+    archive_stem: str = SHINY_ARCHIVE_STEM,
+    save: Callable[[PadDriver], None] = save_game,
 ) -> int:
-    """Receive Poipole, then read SV. Miss: sv=-1 and soft reset. Shiny: save."""
+    """Receive the gift, then read SV. Miss: sv=-1 and soft reset. Shiny: save."""
     attempt = hunt_log.next_attempt_number() if hunt_log is not None else None
     started_at = time.perf_counter() if hunt_log is not None else None
-    run_poipole_sequence(pad)
+    sequence(pad)
     try:
         base, slots, mon = read_party_sv(client, species)
     except (PartyError, RpcError) as exc:
@@ -285,7 +303,7 @@ def run_poipole_once(
             print("Force save: in-game save after receive (timing test)")
         try:
             before = file_fingerprint(paths.ultra_moon_main)
-            save_game(pad)
+            save(pad)
             wait_for_main_flush(paths.ultra_moon_main, before)
         except (SequenceError, ShinyError, OSError) as exc:
             print(str(exc), file=sys.stderr)
@@ -299,6 +317,7 @@ def run_poipole_once(
                 live_main=paths.ultra_moon_main,
                 resources_dir=paths.resources_dir,
                 repo_root=paths.repo_root,
+                archive_stem=archive_stem,
             )
         print(
             "Force save: in-game save done. Restore the parked hunt save "
@@ -323,16 +342,37 @@ def run_selected_hunt(
     Miss (`sv=-1`): extra L+R+Start (already done in `run_poipole_once`).
     `--hunt … --force-shiny` is one timing-test receive, not a loop.
     """
-    if hunt.sequence != "poipole":
+    sequences = {
+        "poipole": run_poipole_sequence,
+        "type-null": run_type_null_sequence,
+    }
+    sequence = sequences.get(hunt.sequence or "")
+    if sequence is None:
         print(f"{hunt.name} is not implemented.", file=sys.stderr)
         return 1
     if max_attempts is not None and max_attempts < 1:
         print("--max-attempts must be >= 1", file=sys.stderr)
         return 1
     species = hunt.species if hunt.species is not None else POIPOLE_SPECIES
-    hunt_log = HuntLog(session.paths.logs_dir)
+    logs_dir = session.paths.logs_dir
+    if hunt.id != "poipole":
+        logs_dir = logs_dir / hunt.id
+    hunt_log = HuntLog(logs_dir)
     started, next_attempt = hunt_log.prepare()
     hunt_log.write_run_header(started, next_attempt)
+    archive_stem = f"main-{hunt.id}-shiny"
+    save = save_type_null if hunt.sequence == "type-null" else save_game
+    # Soft reset returns to the title. The ROM load wait is launch-only.
+    boot = hunt.sequence == "type-null"
+
+    def attempt_sequence(pad: PadDriver) -> int:
+        nonlocal boot
+        if hunt.sequence != "type-null":
+            return sequence(pad)
+        include_boot = boot
+        boot = False
+        return run_type_null_sequence(pad, boot=include_boot)
+
     try:
         if pad is None:
             pad = PadDriver(session)
@@ -340,11 +380,17 @@ def run_selected_hunt(
             return run_poipole_once(
                 pad, client, species, hunt_log, session.paths,
                 force_save=True,
+                sequence=attempt_sequence,
+                archive_stem=archive_stem,
+                save=save,
             )
         logged = 0
         while True:
             code = run_poipole_once(
                 pad, client, species, hunt_log, session.paths,
+                sequence=attempt_sequence,
+                archive_stem=archive_stem,
+                save=save,
             )
             result = hunt_log.last_logged_result()
             if result == "shiny":

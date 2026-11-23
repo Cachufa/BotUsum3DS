@@ -249,6 +249,26 @@ class ForceShinyCliTests(unittest.TestCase):
             session.assert_not_called()
             self.assertEqual(live.read_bytes(), b"keep-me")
 
+    def test_type_null_is_not_blocked_by_poipole_shiny(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            paths = _paths(root)
+            HuntLog(paths.logs_dir).write_attempt(
+                attempt=2738,
+                duration_s=1.0,
+                sv=6,
+            )
+            stderr = io.StringIO()
+            with (
+                patch("botusum.__main__.resolve_paths", return_value=paths),
+                patch("sys.stderr", stderr),
+            ):
+                code = main(["--hunt", "type-null"])
+            self.assertEqual(code, 1)
+            self.assertNotIn("Shiny already logged", stderr.getvalue())
+            self.assertNotIn("not implemented", stderr.getvalue())
+            self.assertIn("Missing required paths", stderr.getvalue())
+
     def test_main_force_shiny_does_not_boot_azahar(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

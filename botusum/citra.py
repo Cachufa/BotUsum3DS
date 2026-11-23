@@ -9,7 +9,9 @@ import random
 import enum
 import socket
 
-CURRENT_REQUEST_VERSION = 1
+# Azahar 2126.2 rejects version 1 with an empty reply, so the process list
+# looks like no game is running. Packet layout is otherwise unchanged.
+CURRENT_REQUEST_VERSION = 2
 MAX_REQUEST_DATA_SIZE = 1024
 MAX_PACKET_SIZE = 1024 + 0x10
 

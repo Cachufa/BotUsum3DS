@@ -1,4 +1,4 @@
-"""Terminal hunt list. Phase 1: Poipole is the only live hunt."""
+"""Terminal hunt list."""
 
 from __future__ import annotations
 
@@ -48,14 +48,14 @@ HUNTS: tuple[HuntSpec, ...] = (
     HuntSpec(
         id="type-null",
         name="Type: Null",
-        summary="Aether Paradise gift",
+        summary="Ancient Poni Path gift, 1/4096",
         game="Ultra Moon",
         title_id=ULTRA_MOON_TITLE_ID,
         rom_name=ULTRA_MOON_ROM_NAME,
         species=TYPE_NULL_SPECIES,
         party_slot=0,
-        sequence=None,
-        implemented=False,
+        sequence="type-null",
+        implemented=True,
     ),
 )
 

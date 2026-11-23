@@ -17,8 +17,6 @@ SAVE_FLUSH_TIMEOUT_S = 20.0
 SAVE_FLUSH_POLL_S = 0.1
 SAVE_FLUSH_STABLE_S = 0.4
 
-_SHINY_ARCHIVE_RE = re.compile(rf"^{re.escape(SHINY_ARCHIVE_STEM)}-(\d+)$")
-
 
 class ShinyError(Exception):
     """Live save missing, copy failed, or Azahar `main` did not flush."""
@@ -70,15 +68,19 @@ def wait_for_main_flush(
     return final
 
 
-def next_shiny_archive(resources_dir: Path) -> Path:
-    """`resources/main-poipole-shiny-N` with N = 1 + max existing."""
+def next_shiny_archive(
+    resources_dir: Path,
+    stem: str = SHINY_ARCHIVE_STEM,
+) -> Path:
+    """`resources/<stem>-N` with N = 1 + max existing for that stem."""
+    pattern = re.compile(rf"^{re.escape(stem)}-(\d+)$")
     max_n = 0
     if resources_dir.is_dir():
         for entry in resources_dir.iterdir():
-            match = _SHINY_ARCHIVE_RE.fullmatch(entry.name)
+            match = pattern.fullmatch(entry.name)
             if match:
                 max_n = max(max_n, int(match.group(1)))
-    return resources_dir / f"{SHINY_ARCHIVE_STEM}-{max_n + 1}"
+    return resources_dir / f"{stem}-{max_n + 1}"
 
 
 def copy_main_archive(live_main: Path, dest: Path) -> Path:
@@ -107,13 +109,17 @@ def handle_shiny(
     resources_dir: Path,
     repo_root: Path,
     when: datetime | None = None,
+    archive_stem: str = SHINY_ARCHIVE_STEM,
 ) -> int:
     """Copy `main` to the next archive, log attempt + summary, return 0.
 
     Does not soft-reset. Callers must save in-game (or skip that for
     `--force-shiny`) before this runs. Never overwrites Azahar's live `main`.
     """
-    dest = copy_main_archive(live_main, next_shiny_archive(resources_dir))
+    dest = copy_main_archive(
+        live_main,
+        next_shiny_archive(resources_dir, archive_stem),
+    )
     logged = archive_log_path(dest, repo_root)
     stamp = when if when is not None else utc_now()
     hunt_log.write_attempt(

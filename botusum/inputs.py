@@ -28,6 +28,8 @@ DEFAULT_BUTTON_MAP = {
     "Down": "g",
     "Left": "f",
     "Right": "h",
+    # Overworld walk. Azahar circle pad right is the Right arrow, not D-pad H.
+    "CircleRight": "right",
 }
 
 SOFT_RESET_BUTTONS = ("L", "R", "Start")
@@ -191,6 +193,10 @@ class PadDriver:
 
     def tap(self, button: str) -> None:
         self.session.tap_key(self._key(button))
+
+    def play(self, steps: list[tuple[str, float]]) -> None:
+        """Focus once, then press each button after its delay in seconds."""
+        self.session.play_keys([(self._key(button), delay) for button, delay in steps])
 
     def mash(
         self,

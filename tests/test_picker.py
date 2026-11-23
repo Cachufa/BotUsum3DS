@@ -22,9 +22,11 @@ class ResolveChoiceTests(unittest.TestCase):
         self.assertTrue(by_id.implemented)
         self.assertEqual(by_id.species, 803)
 
-    def test_unimplemented_row(self) -> None:
+    def test_type_null_by_id_and_number(self) -> None:
         hunt = resolve_choice("type-null")
-        self.assertFalse(hunt.implemented)
+        self.assertTrue(hunt.implemented)
+        self.assertEqual(hunt.sequence, "type-null")
+        self.assertEqual(hunt.species, 772)
         self.assertEqual(hunt, resolve_choice("2"))
 
     def test_unknown_and_empty(self) -> None:
